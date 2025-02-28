@@ -2,12 +2,12 @@ import sqlite3
 import aiosqlite
 import asyncio
 import discord
-
+import re
 
 async def init_db():
     async with aiosqlite.connect('data.db') as db:
         # Create database for the servers the bot in with some basic data
-        db.execute('''
+        await db.execute('''
             CREATE TABLE IF NOT EXISTS Server_Data (
                 Server_ID INTEGER PRIMARY KEY,
                 Server_Name STRING,
@@ -19,10 +19,11 @@ async def init_db():
         ''')
 
         # Creates database for giveways
-        # DATE FORMAT WILL BE IN  MONTH/DAY/YEAR:HOUR:MINUTES FORMAT
-        db.execute('''
+        # DATE FORMAT WILL BE IN  MONTH/DAY/YEAR Hour:Minute
+        await db.execute('''
             CREATE TABLE IF NOT EXISTS Giveaways (
-                ID INTEGER PRIMARY KEY,
+                Message_ID INTEGER PRIMARY KEY,
+                ID INTEGER,
                 Prize STRING,   
                 Description  STRING,
                 Start STRING,
@@ -35,15 +36,30 @@ async def init_db():
                 Target_Server INTEGER
             )
         ''')
-
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS Entries (
+                Member_ID INTEGER,
+                Server_ID INTEGER,
+                Message_ID INTEGER
+            )
+        ''')
     await db.commit()
     print("Database initilized with no issues (hopefully)")
 
+    # thanks to andrewthederp and Robin5605 for making it cleaner :)
+def parse_message_link(url: str, message_type: str):
+    Message_Data = re.search(r"https://discord.com/channels/(?P<g>\d+)/(?P<c>\d+)/(?P<m>\d+)", url)
 
-async def Add_Server_To_DB(id: int, Name: str, Description: str, Owner: int, Members: int):
+    if not Message_Data:
+        print("bad")
+        return None
+    return int(Message_Data[message_type])
+
+
+async def add_server_to_db(id: int, Name: str, Description: str, Owner: int, Members: int):
     # Adds an server to the database
     async with aiosqlite.connect('data.db') as db:
-        db.execute('''
+        await db.execute('''
             INSERT OR IGNORE INTO Server_Data
             (Server_Id, Server_Name, Server_Description , Server_Owner, Members, Is_Blacklisted)
             VALUES (?,?,?,?,?,?)
@@ -51,3 +67,59 @@ async def Add_Server_To_DB(id: int, Name: str, Description: str, Owner: int, Mem
     await db.commit()
     print(f"Added & Joined {Name} | {id} to Server_Data")
 
+async def remove_server_from_db(id: int, Name: str):
+    async with aiosqlite.connect('data.db') as db:
+        await db.execute('''
+            DELETE FROM Server_Data WHERE Server_ID = ?
+        '''), (id)
+        await db.execute('''
+            DELETE FROM Giveaways WHERE Server_Host = ?
+        '''), (id)
+    await db.commit()
+    print(f"Removed  {Name} | {id} to Server_Data & Server_Host")
+
+
+async def handle_entries(Member_ID: int, Member_Name: str, Server_ID: int, Message_ID: int):
+    async with aiosqlite.connect('data.db') as db:
+        cursor = await db.execute('''
+            SELECT * FROM Entries WHERE Member_ID = ? and Message_ID = ?
+        ''')
+        entry = await cursor.fetchone()
+        if entry:
+            await remove_entry(Member_ID,Member_Name,Message_ID)
+            return None
+        else:
+            await add_entry(Member_ID,Member_Name,Server_ID,Message_ID)
+            return True
+        
+async def add_entry(Member_ID: int,Member_Name: str, Server_ID: int, Message_ID: int):
+    async with aiosqlite.connect('data.db') as db:
+        await db.execute('''
+            INSERT INTO Entries (Member_ID, Server_ID, Message_ID) VALUES (?,?,?)
+        '''), (Member_ID,Server_ID,Message_ID)
+        await db.commit()
+        print(f"{Member_Name} | {Member_ID} Joined giveaway id: {Message_ID} in server {Server_ID}")
+
+async def remove_entry(Member_ID: int, Member_Name: str, Message_ID: int):
+    async with aiosqlite.connect('data.db') as db:
+        await db.execute('''
+            DELETE FROM Entries WHERE Member_ID = ? AND Message_ID = ?
+        '''), (Member_ID,Message_ID)
+        await db.commit()
+        print(f"{Member_Name} | {Member_ID} left id: {Message_ID}")
+
+async def fetch_giveaway(message_id: int):
+    async with aiosqlite.connect('data.db') as db:
+        cursor = await db.execute('''
+            SELECT * FROM giveaways WHERE message_ID = ?
+        ''', (message_id,))  
+
+        result = await cursor.fetchone()
+        await cursor.close()  
+
+        return result
+async def create_giveaway():
+    pass
+
+async def create_giveaway_embed():
+    pass

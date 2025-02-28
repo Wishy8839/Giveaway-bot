@@ -37,6 +37,10 @@ if __name__ == '__main__':
 async def on_guild_join(guild:discord.Guild):
     await data.Add_Server_To_DB(id=guild.id,Name=guild.name,Description=guild.description,Owner=guild.owner,Members=guild.member_count)
 
+@bot.event
+async def on_guild_remove(guild:discord.Guild):
+    await data.Remove_Server_From_DB(id=guild.id,Name=guild.name)
+
 
 @bot.event
 async def on_ready():
