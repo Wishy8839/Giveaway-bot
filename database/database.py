@@ -1,6 +1,4 @@
-import sqlite3
 import aiosqlite
-import asyncio
 import discord
 import re
 
@@ -54,6 +52,15 @@ def parse_message_link(url: str, message_type: str):
         print("bad")
         return None
     return int(Message_Data[message_type])
+
+async def update_owner(new_id: int,server: int):
+    async with aiosqlite.connect('data.db') as db:
+        await db.execute('''
+        UPDATE Server_Data SET Server_Owner = ? WHERE Server_ID = ?
+    '''), (new_id,server)
+    await db.commit()
+    print(f"Updated {new_id} as server owner for {server}")
+
 
 
 async def add_server_to_db(id: int, Name: str, Description: str, Owner: int, Members: int):

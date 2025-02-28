@@ -35,17 +35,23 @@ if __name__ == '__main__':
 # Add guild to database whenever the bot gets added to the server
 @bot.event()
 async def on_guild_join(guild:discord.Guild):
-    await data.Add_Server_To_DB(id=guild.id,Name=guild.name,Description=guild.description,Owner=guild.owner,Members=guild.member_count)
+    await data.add_server_to_db(id=guild.id,Name=guild.name,Description=guild.description,Owner=guild.owner,Members=guild.member_count)
 
 @bot.event
 async def on_guild_remove(guild:discord.Guild):
-    await data.Remove_Server_From_DB(id=guild.id,Name=guild.name)
+    await data.remove_server_from_db(id=guild.id,Name=guild.name)
 
+
+# In theory this updates server owners
+@bot.event
+async def on_guild_update(before, after):
+    if before.owner.id != after.owner.id:
+        print(f"Old Owner: {before.owner.id} -> New Owner: {after.owner.id}")
+        await data.update_owner(after.owner.id, after.id)
 
 @bot.event
 async def on_ready():
     await data.init_db()
-    print(f"We have logged in as {bot.user}")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name =f"deez nutz"))
     print(f"bot account: {bot.user} | version: {discord.__version__}")
 
