@@ -19,6 +19,7 @@ async def init_db():
         ''')
 
         # Creates database for giveways
+        # DATE FORMAT WILL BE IN  MONTH/DAY/YEAR:HOUR:MINUTES FORMAT
         db.execute('''
             CREATE TABLE IF NOT EXISTS Giveaways (
                 ID INTEGER PRIMARY KEY,

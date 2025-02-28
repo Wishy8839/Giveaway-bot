@@ -10,12 +10,10 @@ import random
 import datetime 
 import sqlite3
 from discord import Interaction
-import importlib.util
 from dotenv import load_dotenv
 import time
 import os
 import re
-import pytz
 import requests
 from typing import Literal, Optional
 import database.database as data
@@ -25,7 +23,6 @@ initial_extensions = [
     "Cogs.placeholder",
     "Cogs.placeholder"
 ]
-print(initial_extensions)
 
 if __name__ == '__main__':
     for extension in initial_extensions:
