@@ -1,5 +1,4 @@
 import discord
-import logging
 import discord.ext.commands 
 from discord.ext.commands import cooldown, BucketType
 from discord import app_commands
@@ -24,8 +23,8 @@ bot = commands.Bot(".", intents = discord.Intents.all())
 
 # Load cogs
 initial_extensions = [
-    "Cogs.help",
-    "Cogs.ping"
+    "Cogs.placeholder",
+    "Cogs.placeholder"
 ]
 print(initial_extensions)
 
