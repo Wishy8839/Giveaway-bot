@@ -18,9 +18,8 @@ import re
 import pytz
 import requests
 from typing import Literal, Optional
+import database.database as data
 bot = commands.Bot(".", intents = discord.Intents.all())
-
-
 # Load cogs
 initial_extensions = [
     "Cogs.placeholder",
@@ -35,11 +34,16 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Failed to load extension {extension}")
 
-@bot.command
+
+# Add guild to database whenever the bot gets added to the server
+@bot.event()
+async def on_guild_join(guild:discord.Guild):
+    await data.Add_Server_To_DB(id=guild.id,Name=guild.name,Description=guild.description,Owner=guild.owner,Members=guild.member_count)
 
 
 @bot.event
 async def on_ready():
+    await data.init_db()
     print(f"We have logged in as {bot.user}")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name =f"deez nutz"))
     print(f"bot account: {bot.user} | version: {discord.__version__}")
