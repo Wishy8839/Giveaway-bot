@@ -27,11 +27,11 @@ class PersistentView(discord.ui.View):
     @discord.ui.button(label='🎉', style=discord.ButtonStyle.primary, custom_id='Giveaway_Button')
     async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
         message = interaction.message.id
-
-        if not data.Fetch_Giveaway(message):
+        giveaway = data.fetch_giveaway(message)
+        if not giveaway:
             interaction.response.send_message("Something went wrong",ephemeral=True)
             return
-        if data.Handle_Entries():
+        if data.handle_entries(interaction.message.id):
             pass
             # place holder
 
@@ -47,8 +47,6 @@ class giveaway_stuff(commands.GroupCog, group_name="giveaway"):
         self.bot = bot
 
     @app_commands.command(name="create",description="Create an giveaway")
-    async def create_giveaway(self, interaction: discord.Interaction, prize: str, amount: int):
-        interaction.response.send_message("Pass",ephemeral=True)
-        discord.ui.button(label="Join",style=discord.ButtonStyle.primary)
-
+    async def create_giveaway(self, interaction: discord.Interaction, prize: str, amount: int, end_time: str, role: discord.Role = None, partner_server: int = None):
+        interaction.response.send_message("i'll do you eventually",ephemeral=True)
 

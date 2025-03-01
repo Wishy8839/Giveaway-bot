@@ -29,7 +29,7 @@ async def init_db():
                 Role_Requirement INTEGER,
                 Amount INTEGER,
                 Host INTEGER,
-                Winners INTEGER,
+                Winners STRING,
                 Server_Host INTEGER,
                 Target_Server INTEGER
             )
@@ -115,18 +115,38 @@ async def remove_entry(Member_ID: int, Member_Name: str, Message_ID: int):
         await db.commit()
         print(f"{Member_Name} | {Member_ID} left id: {Message_ID}")
 
+async def fetch_entries(message_id: int):
+    async with aiosqlite.connect('data.db') as db:
+        cursor = await db.execute('''
+            SELECT * FROM entries WHERE Message_ID = ?
+        ''', (message_id,))
+
+        result = await cursor.fetchall()
+        await cursor.close()  
+
+        return result
+
 async def fetch_giveaway(message_id: int):
     async with aiosqlite.connect('data.db') as db:
         cursor = await db.execute('''
-            SELECT * FROM giveaways WHERE message_ID = ?
-        ''', (message_id,))  
+            SELECT * FROM giveaways WHERE Message_ID = ?
+        ''', (message_id,))
 
-        result = await cursor.fetchone()
+        result = await cursor.fetchall()
         await cursor.close()  
 
         return result
 async def create_giveaway():
+    # i'm cooked
     pass
 
-async def create_giveaway_embed():
-    pass
+async def create_giveaway_embed(message_id: int):
+    giveaway = await fetch_giveaway(message_id)
+    giveaway_embed = discord.Embed(title=giveaway[3],description=giveaway[4])
+    giveaway_embed.add_field(name="Amount",value=giveaway[7],inline=True)
+    giveaway_embed.add_field(name="Ends",value={5},inline=True)
+    giveaway_embed.add_field(name="Entries",value=await len(fetch_entries(message_id)),inline=True)
+    giveaway_embed.set_footer(text=f"Hosted by {giveaway} ")
+
+    return giveaway_embed
+                  
