@@ -16,9 +16,7 @@ import os
 import re
 import requests
 from typing import Literal, Optional
-import database.database as data
-
-
+import db as data
 
 class PersistentView(discord.ui.View):
     def __init__(self):
@@ -27,26 +25,25 @@ class PersistentView(discord.ui.View):
     @discord.ui.button(label='🎉', style=discord.ButtonStyle.primary, custom_id='Giveaway_Button')
     async def green(self, interaction: discord.Interaction, button: discord.ui.Button):
         message = interaction.message.id
-        giveaway = data.fetch_giveaway(message)
+        giveaway = await data.fetch_giveaway(message)
         if not giveaway:
-            interaction.response.send_message("Something went wrong",ephemeral=True)
+            await interaction.response.send_message("Something went wrong", ephemeral=True)
             return
-        if data.handle_entries(interaction.message.id):
+        if await data.handle_entries(interaction.message.id):
             pass
-            # place holder
-
-        
 
 
 
 
-
-
-class giveaway_stuff(commands.GroupCog, group_name="giveaway"):
+class link(commands.GroupCog, group_name="giveaway"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="create",description="Create an giveaway")
+    @app_commands.command(name="create", description="Create a giveaway")
     async def create_giveaway(self, interaction: discord.Interaction, prize: str, amount: int, end_time: str, role: discord.Role = None, partner_server: int = None):
-        interaction.response.send_message("i'll do you eventually",ephemeral=True)
+        await interaction.response.send_message("I'll do you eventually", ephemeral=True)
+        
 
+# Setup the bot
+async def setup(bot: commands.Bot):
+    await bot.add_cog(link(bot))
