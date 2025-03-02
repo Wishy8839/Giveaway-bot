@@ -17,7 +17,7 @@ import re
 import requests
 from typing import Literal, Optional
 import db as data
-loaded = None
+loaded = 1
 bot = commands.Bot(".", intents = discord.Intents.all())
 # Load cogs
 initial_extensions = [
@@ -57,6 +57,7 @@ async def on_guild_update(before, after):
 async def tree(ctx:commands.Context):
     await bot.tree.sync()
     await ctx.send("Tree sync'd")
+    print("Tree updated")
 
 @bot.command(name = "giveaways") 
 async def giveaways(ctx:commands.Context):
@@ -66,7 +67,9 @@ async def giveaways(ctx:commands.Context):
 
 @bot.event
 async def on_ready():
-    await bot.load_extension('cogs.Giveaways.handle_giveaways')
+    if loaded != 1:
+        await bot.load_extension('cogs.Giveaways.handle_giveaways')
+        loaded = 1
     await data.init_db()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name =f"deez nutz"))
     print(f"bot account: {bot.user} | version: {discord.__version__}")
