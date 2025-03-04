@@ -28,7 +28,8 @@ async def init_db():
                 Host INTEGER,
                 Winners STRING,
                 Server_Host INTEGER,
-                Target_Server INTEGER
+                Target_Server INTEGER,
+                Target_Server_Name STRING
             )
         ''')
         await db.execute('''
@@ -120,7 +121,7 @@ async def fetch_giveaway(message_id: int):
         cursor = await db.execute('''
             SELECT * FROM giveaways WHERE Message_ID = ?
         ''', (message_id,))
-        result = await cursor.fetchall()
+        result = await cursor.fetchone()
         await cursor.close()
         return result
 
@@ -133,7 +134,7 @@ async def fetch_giveaway_raw():
         await cursor.close()
         return result
 
-async def create_giveaway(Prize: str, Description: str, amount: int, host: str, host_server: int, end: str, partner_server: int = None, message_id: int = None, role: int = None):
+async def create_giveaway(Prize: str, Description: str, amount: int, host: str, host_server: int, end: str, partner_server: int = None, message_id: int = None, role: int = None, partner_server_name: str = None):
     unique_id = None
     start = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     async with aiosqlite.connect('data.db') as db:
@@ -141,17 +142,28 @@ async def create_giveaway(Prize: str, Description: str, amount: int, host: str, 
         results = await cursor.fetchall()
         unique_id = len(results) + 1
         await db.execute('''
-            INSERT INTO giveaways (Message_ID, ID, Prize, Description, Start, End, Role_Requirement, Amount, Host, Server_Host, Target_Server)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
-        ''', (message_id, unique_id, Prize, Description, start, end, role, amount, host, host_server, partner_server))
+            INSERT INTO giveaways (Message_ID, ID, Prize, Description, Start, End, Role_Requirement, Amount, Host, Server_Host, Target_Server, Target_Server_Name)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        ''', (message_id, unique_id, Prize, Description, start, end, role, amount, host, host_server, partner_server,partner_server_name))
         await db.commit()
 
 async def update_giveaway_embed(message_id: int):
     giveaway = await fetch_giveaway(message_id)
     entries = await fetch_entries(message_id)
-    giveaway_embed = discord.Embed(title=giveaway[3], description=giveaway[4])
-    giveaway_embed.add_field(name="Amount", value=giveaway[7], inline=True)
-    giveaway_embed.add_field(name="Ends", value=giveaway[5], inline=True)
-    giveaway_embed.add_field(name="Entries", value=len(entries), inline=True)
-    giveaway_embed.set_footer(text=f"Hosted by {giveaway[8]}")
+    desc = (f'''
+            {giveaway[3]}
+            Ends: {giveaway[5]}
+            Winners: {giveaway[7]}
+            Entries: {len(entries)}
+       ''')
+    if giveaway[6]:
+        desc += f"\nRequirement: <@&{giveaway[6]}>"
+    if giveaway[11]:
+        desc += f"\nHave to be in: [{giveaway[12]}]({giveaway[12]})"
+
+    giveaway_embed = discord.Embed(
+            title=giveaway[2],
+            description=desc
+        )
+    giveaway_embed.set_footer(text=f"Hosted by {giveaway[8]} | ")
     return giveaway_embed
