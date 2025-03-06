@@ -2,9 +2,9 @@ import aiosqlite
 import discord
 import re
 import datetime
-
+import asyncio
 async def init_db():
-    async with aiosqlite.connect('data.db') as db:
+    async with aiosqlite.connect("data.db") as db:
         await db.execute('''
             CREATE TABLE IF NOT EXISTS Server_Data (
                 Server_ID INTEGER PRIMARY KEY,

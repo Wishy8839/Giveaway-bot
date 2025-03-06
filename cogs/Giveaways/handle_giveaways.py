@@ -31,8 +31,8 @@ class PersistentView(discord.ui.View):
         message = interaction.message.id
         giveaway = await data.fetch_giveaway(message)
         print(giveaway)
-        invite_urll =  giveaway[10] if giveaway[10] else None
-        invite_name = giveaway[11] if giveaway[11] else None
+        invite_urll =  giveaway[11] if giveaway[11] else None
+        invite_name = giveaway[12] if giveaway[12] else None
         if not giveaway:
             await interaction.response.send_message("Something went wrong", ephemeral=True)
             return
@@ -49,7 +49,7 @@ class PersistentView(discord.ui.View):
         async def callback(self, interaction: discord.Interaction):
             message = interaction.message.id
             giveaway = await data.fetch_giveaway(message)
-            await interaction.response.send_message(f"You can join here!\n{giveaway[10]}",ephemeral=True)
+            await interaction.response.send_message(f"You can join here!\n{giveaway[11]}",ephemeral=True)
 
 
 async def restore_persistent_views(bot: commands.Bot):
@@ -90,7 +90,7 @@ class link(commands.GroupCog, group_name="giveaway"):
 
         # will parste into database later
         if tt.string_to_seconds(end_time) is False:
-            interaction.followup.send(
+            await interaction.followup.send(
                 "Incorrect format used for the end date of the give\n"
 
                 "Examples of proper use"
@@ -100,6 +100,8 @@ class link(commands.GroupCog, group_name="giveaway"):
                 "'30 minutes'"
                 ""
             )
+            return
+        end_time = tt.seconds_to_discord_timestamp(tt.string_to_seconds(end_time))
         invite_link = await self.bot.fetch_invite(invite) if invite else None
         invite_name = invite_link.guild.name if invite_link else None
         role_id = role.id if role else None

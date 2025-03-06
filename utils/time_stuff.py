@@ -31,7 +31,7 @@ def seconds_to_discord_timestamp(seconds: float):
 
 
 
-# not all made by me (im too lazy)
+# not all made by me (im too lazy) NOT DOING THE CODE MAKES IT NOT WORK WHO WOULDA GUESSED PEE U
 def string_to_seconds(time_str):
     time_str = str(time_str)
     time_str = time_str.lower()
