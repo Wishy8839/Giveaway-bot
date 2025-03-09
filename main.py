@@ -6,16 +6,15 @@ from discord.ext import commands, tasks
 from discord.ui import View, Button, Select, Modal, TextInput
 from discord.utils import get
 import asyncio
-import random
+import random   
 import datetime 
-import sqlite3
 from discord import Interaction
 from dotenv import load_dotenv
 import time
 import os
 import re
 import requests
-from typing import Literal, Optional
+from typing import Literal
 import db as data
 from cogs.Giveaways.handle_giveaways import PersistentView, restore_persistent_views
 loaded = 1
@@ -66,6 +65,25 @@ async def giveaways(ctx:commands.Context):
     await ctx.send(f"`{await data.fetch_giveaway_raw()}`")
 
 
+@bot.event
+async def on_member_join(member:discord.Member):
+    await data.add_member(member_id=member.id,server_id=member.guild.id)
+
+@bot.event
+async def on_member_remove(member:discord.Member):
+    await data.remove_member(member_id=member.id,server_id=member.guild.id)
+
+@bot.event
+async def on_guild_join(guild:discord.Guild):
+    members = guild.members
+    for mem in members:
+        await data.add_member(member_id=mem.id,server_id=guild.id)
+
+@bot.event
+async def on_guild_remove(guild:discord.Guild):
+    members = guild.members
+    for mem in members:
+        await data.remove_member(member_id=mem.id,server_id=guild.id)
 
 
 
@@ -74,6 +92,9 @@ async def giveaways(ctx:commands.Context):
 async def on_ready():
     await bot.load_extension('cogs.Giveaways.handle_giveaways')
     await data.init_db()
+    for guild in bot.guilds:
+        for member in guild.members:
+            await data.add_member(member_id=member.id,server_id=guild.id)
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name =f"deez nutz"))
     print(f"bot account: {bot.user} | version: {discord.__version__}")
     bot.add_view(PersistentView())

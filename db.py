@@ -22,21 +22,30 @@ async def init_db():
                 Prize STRING,   
                 Description STRING,
                 Start STRING,
-                End STRING,
+                End INTEGER,
                 Role_Requirement INTEGER,
                 Amount INTEGER,
                 Host INTEGER,
                 Winners STRING,
                 Server_Host INTEGER,
-                Target_Server INTEGER,
-                Target_Server_Name STRING
+                Target_Server STRING,
+                Target_Server_Name STRING,
+                Target_Server_ID INTEGER
             )
         ''')
+
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS Member_Data (
+                Member_ID INTEGER,
+                Server_ID INTEGER,
+                is_server_blacklisted INTEGER
+            )
+        ''')
+
         await db.execute('''
             CREATE TABLE IF NOT EXISTS Entries (
                 Member_ID INTEGER,
-                Server_ID INTEGER,
-                Message_ID INTEGER
+                Server_ID INTEGER
             )
         ''')
         await db.commit()
@@ -107,6 +116,36 @@ async def remove_entry(Member_ID: int, Member_Name: str, Message_ID: int):
         await db.commit()
     print(f"{Member_Name} | {Member_ID} left id: {Message_ID}")
 
+async def check_in_server(member_id, server_id):
+    async with aiosqlite.connect('data.db') as db:
+        cursor = await db.execute('''
+            SELECT * FROM Member_Data WHERE Member_ID = ? AND Server_ID = ?
+        ''', (member_id,server_id,))
+        result = await cursor.fetchone()
+        if not result:
+            return False
+        else:
+            return True
+
+
+async def add_member(member_id,server_id):
+    async with aiosqlite.connect('data.db') as db:
+        if not await check_in_server(member_id,server_id):
+            await db.execute('''
+                INSERT INTO Member_Data (Member_ID, Server_ID VALUES (?,?)
+            ''', (member_id, server_id))
+            await db.commit()
+        else:
+            return
+
+async def remove_member(member_id,server_id):
+    async with aiosqlite.connect('data.db') as db:
+        await db.execute('''
+            DELETE FROM Member_Data WHERE Member_ID = ? AND Server_ID = ?
+        ''', (member_id, server_id))
+        await db.commit()
+
+
 async def fetch_entries(message_id: int):
     async with aiosqlite.connect('data.db') as db:
         cursor = await db.execute('''
@@ -134,7 +173,7 @@ async def fetch_giveaway_raw():
         await cursor.close()
         return result
 
-async def create_giveaway(Prize: str, Description: str, amount: int, host: str, host_server: int, end: str, partner_server: int = None, message_id: int = None, role: int = None, partner_server_name: str = None):
+async def create_giveaway(Prize: str, Description: str, amount: int, host: str, host_server: int, end: int, partner_server: int = None, message_id: int = None, role: int = None, partner_server_name: str = None, partner_server_id: str = None):
     unique_id = None
     start = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     async with aiosqlite.connect('data.db') as db:
@@ -151,19 +190,19 @@ async def update_giveaway_embed(message_id: int):
     giveaway = await fetch_giveaway(message_id)
     entries = await fetch_entries(message_id)
     desc = (f'''
-            {giveaway[3]}
-            Ends: {giveaway[5]}
+            {giveaway[3]}\n
+            Ends: <t:{giveaway}:f>"
             Winners: {giveaway[7]}
             Entries: {len(entries)}
        ''')
     if giveaway[6]:
         desc += f"\nRequirement: <@&{giveaway[6]}>"
     if giveaway[11]:
-        desc += f"\nHave to be in: [{giveaway[12]}]({giveaway[12]})"
+        desc += f"\nHave to be in: [{giveaway[12]}]({giveaway[11]})"
 
-    giveaway_embed = discord.Embed(
+    embed = discord.Embed(
             title=giveaway[2],
             description=desc
         )
-    giveaway_embed.set_footer(text=f"Hosted by {giveaway[8]} | ")
-    return giveaway_embed
+    embed.set_footer(text=f"Hosted by {giveaway[8]} | ")
+    return embed

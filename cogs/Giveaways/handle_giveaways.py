@@ -33,6 +33,13 @@ class PersistentView(discord.ui.View):
         print(giveaway)
         invite_urll =  giveaway[11] if giveaway[11] else None
         invite_name = giveaway[12] if giveaway[12] else None
+        if giveaway[6]:
+            if not interaction.user.get_role(giveaway[6]):
+                await interaction.response.send_message("You dont have the role required to join",ephemeral=True)
+                return
+        if giveaway[13]:
+            if not await data.check_in_server(server_id=giveaway[13],member_id=interaction.user.id):
+                    await interaction.response.send_message("You're not in the required server to join",ephemeral=True)
         if not giveaway:
             await interaction.response.send_message("Something went wrong", ephemeral=True)
             return
@@ -87,9 +94,10 @@ class link(commands.GroupCog, group_name="giveaway"):
     @app_commands.command(name="create", description="Create a giveaway")
     async def create_giveaway(self, interaction: discord.Interaction, prize: str, description: str, amount: int, end_time: str, role: discord.Role = None, invite: str = None):
         await interaction.response.defer()
-
-        # will parste into database later
-        if tt.string_to_seconds(end_time) is False:
+        print(type(end_time))
+        secs = tt.string_to_seconds(end_time)
+        # will parste into database later also make it more pretty
+        if secs is False:
             await interaction.followup.send(
                 "Incorrect format used for the end date of the give\n"
 
@@ -104,7 +112,9 @@ class link(commands.GroupCog, group_name="giveaway"):
         end_time = tt.seconds_to_discord_timestamp(tt.string_to_seconds(end_time))
         invite_link = await self.bot.fetch_invite(invite) if invite else None
         invite_name = invite_link.guild.name if invite_link else None
+        invite_id = invite_link.guild.id if invite_link else None
         role_id = role.id if role else None
+        dess = description
         desc = (f'''
             {description}
             Ends: {end_time}
@@ -115,6 +125,7 @@ class link(commands.GroupCog, group_name="giveaway"):
             desc += f"\nRequirement: <@&{role.id}>"
         if invite_link:
             desc += f"\nHave to be in: [{invite_link.guild.name}]({invite_link.url})"
+
         giveaway_embed = discord.Embed(
             title=prize,
             description=desc
@@ -123,8 +134,8 @@ class link(commands.GroupCog, group_name="giveaway"):
         
         message = await interaction.followup.send(embed=giveaway_embed, view=PersistentView(invite_url=invite_link.url if invite_link else None))
         ids = message.id
-        
-        await data.create_giveaway(prize,Description=desc,amount=amount,host=interaction.user.global_name,host_server=interaction.guild.name,end=end_time,partner_server=invite,message_id=ids,role=role_id,partner_server_name=invite_name)
+        endd = await tt.current_time_in_unix() + secs
+        await data.create_giveaway(prize,Description=dess,amount=amount,host=interaction.user.global_name,host_server=interaction.guild.name,end=endd,partner_server=invite,message_id=ids,role=role_id,partner_server_name=invite_name,partner_server_id=invite_id)
 
 # Setup the bot
 async def setup(bot: commands.Bot):
